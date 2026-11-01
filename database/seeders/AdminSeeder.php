@@ -14,6 +14,10 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Admin::exists()) {
+            return;
+        }
+
         $obj = new Admin;
         $obj->name = "Admin";
         $obj->email = "admin@example.com";

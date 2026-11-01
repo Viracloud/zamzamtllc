@@ -12,16 +12,21 @@ class DatabaseSeeder extends Seeder
      *
      * Values in [brackets] are the placeholders from the design file; they are
      * meant to be replaced from Admin > Company Settings.
+     *
+     * Safe to run more than once: existing admins, settings and content are kept.
      */
     public function run(): void
     {
+        $this->seedSettings();
         $this->call([AdminSeeder::class, ContentSeeder::class]);
+    }
 
+    private function seedSettings(): void
+    {
         $now = now();
 
         // -------- settings (singleton id = 1) --------
-        DB::table('settings')->insert([
-            'id' => 1,
+        $settings = [
             'logo' => null,
             'favicon' => null,
             'hero_image' => null,
@@ -54,8 +59,15 @@ class DatabaseSeeder extends Seeder
             'owner_operator_percentage' => '88%',
             'min_experience' => '1',
 
-            'created_at' => $now,
             'updated_at' => $now,
-        ]);
+        ];
+
+        // The app creates an empty row on boot, so the row may exist before seeding.
+        $existing = DB::table('settings')->where('id', 1)->first();
+        if (!$existing) {
+            DB::table('settings')->insert($settings + ['id' => 1, 'created_at' => $now]);
+        } elseif (blank($existing->company_name)) {
+            DB::table('settings')->where('id', 1)->update($settings);
+        }
     }
 }
