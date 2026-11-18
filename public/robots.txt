@@ -1,4 +1,0 @@
-User-agent: *
-Disallow:
-
-Sitemap: https://zarifayaqobi.org/sitemap.xml

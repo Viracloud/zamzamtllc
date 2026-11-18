@@ -38,3 +38,7 @@ CLAUDE.local.md
 
 # Local archives (may contain .env)
 *.zip
+
+# Local-only files
+/zamzam.zip
+/docs/

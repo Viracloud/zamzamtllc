@@ -1,11 +1,11 @@
 @php($header = cms_global('header'))
-@php($navServices = \App\Models\Service::active()->get())
+@php($navServices = cms_services())
 <header class="site-header">
     <div class="container header-inner">
         @include('front.layouts.logo')
 
         <button class="nav-toggle" type="button" aria-controls="main-nav" aria-expanded="false" aria-label="Open menu">
-            <i class="fa-solid fa-bars"></i>
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
         </button>
 
         <nav id="main-nav" class="main-nav" aria-label="Main">

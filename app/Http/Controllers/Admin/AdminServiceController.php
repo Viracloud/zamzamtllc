@@ -81,11 +81,13 @@ class AdminServiceController extends Controller
 
         $service->fill(collect($data)->except('image_upload')->all());
         $service->is_active = $request->boolean('is_active');
+        $service->noindex = $request->boolean('noindex');
 
         if ($request->hasFile('image_upload')) {
             $this->deleteUpload($service->image);
             $name = 'service_' . time() . '_' . Str::lower(Str::random(6)) . '.' . $request->file('image_upload')->extension();
             $request->file('image_upload')->move(public_path('uploads'), $name);
+            \App\Support\ImageOptimizer::makeWebp(public_path('uploads/' . $name));
             $service->image = $name;
         }
         $service->save();
@@ -95,6 +97,9 @@ class AdminServiceController extends Controller
     {
         if ($file && !str_starts_with($file, 'assets/') && file_exists(public_path('uploads/' . $file))) {
             unlink(public_path('uploads/' . $file));
+        }
+        if ($file && ($webp = \App\Support\ImageOptimizer::webpFor('uploads/' . $file))) {
+            unlink(public_path($webp));
         }
     }
 }

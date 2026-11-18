@@ -42,12 +42,31 @@ class FrontController extends Controller
 
     public function sitemap()
     {
-        $urls = SitePage::where('is_active', true)
+        // Legal pages are kept in the sitemap but with a low priority.
+        $low = ['privacy-policy', 'terms-of-use', 'sms-terms'];
+        // Pages marked "Hide from Google" (noindex) are left out.
+        $urls = SitePage::where('is_active', true)->where('noindex', false)
             ->where(fn ($q) => $q->whereNotNull('slug')->orWhere('key', 'home'))
-            ->orderBy('sort_order')->get()->map->url()
-            ->merge(Service::active()->get()->map->url());
+            ->orderBy('sort_order')->get()
+            ->map(fn ($p) => [
+                'loc' => $p->url(),
+                'lastmod' => $p->updated_at?->toAtomString(),
+                'priority' => $p->key === 'home' ? '1.0' : (in_array($p->key, $low) ? '0.3' : '0.8'),
+            ])
+            ->merge(Service::active()->where('noindex', false)->get()->map(fn ($s) => [
+                'loc' => $s->url(),
+                'lastmod' => $s->updated_at?->toAtomString(),
+                'priority' => '0.9',
+            ]));
 
         return response()->view('front.sitemap', compact('urls'))->header('Content-Type', 'application/xml');
+    }
+
+    /** robots.txt built from the current domain, so it is always right after a move. */
+    public function robots()
+    {
+        $body = "User-agent: *\nDisallow: /admin\nAllow: /\n\nSitemap: " . route('sitemap') . "\n";
+        return response($body, 200)->header('Content-Type', 'text/plain');
     }
 
     private function render(SitePage $page)
@@ -63,8 +82,8 @@ class FrontController extends Controller
         }
 
         $data = $this->validateForm($request, 'quote', [
-            'pickup_location' => 'required|string|max:120',
-            'delivery_location' => 'required|string|max:120',
+            'pickup_location' => ['required', 'string', 'max:120', $this->usLocationRule()],
+            'delivery_location' => ['required', 'string', 'max:120', $this->usLocationRule()],
             'pickup_date' => 'nullable|date|after_or_equal:today',
             'weight' => 'nullable|integer|min:1|max:80000',
             'equipment' => ['required', Rule::in(cms_options('equipment'))],
@@ -78,6 +97,12 @@ class FrontController extends Controller
             'delivery_location' => 'delivery city & state',
             'full_name' => 'full name',
         ]);
+
+        // Sales pitches are kept (in case of a false positive) but filed as Spam with no email.
+        if (QuoteRequest::looksLikeSpam($data)) {
+            QuoteRequest::create($data + ['ip_address' => $request->ip(), 'status' => QuoteRequest::SPAM]);
+            return $this->thanks($request, 'quote');
+        }
 
         $quote = QuoteRequest::create($data + ['ip_address' => $request->ip()]);
 
@@ -165,10 +190,40 @@ class FrontController extends Controller
         return $url . ($form === 'quote' ? '#quote-form' : '#apply-form');
     }
 
-    /** Hidden "website" field is invisible to people; bots fill it. */
+    /** "City, ST", "City, State name" or a 5-digit ZIP — anywhere in the US. */
+    private function usLocationRule(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            $value = trim((string) $value);
+            if (preg_match('/^\d{5}(-\d{4})?$/', $value)) {
+                return;
+            }
+            if (preg_match('/^[\p{L} .\'\-]{2,},\s*([\p{L} .]{2,})$/u', $value, $m)) {
+                $state = strtoupper(trim($m[1], " ."));
+                $names = array_map('strtoupper', DriverApplication::STATES);
+                if (isset(DriverApplication::STATES[$state]) || in_array($state, $names, true)) {
+                    return;
+                }
+            }
+            $fail('Enter a US city and state, like "Chicago, IL", or a ZIP code.');
+        };
+    }
+
+    /** Hidden "website" field is invisible to people; bots fill it. Forms sent within 3s of loading are scripted. */
     private function isBot(Request $request): bool
     {
-        return filled($request->input('website'));
+        if (filled($request->input('website'))) {
+            return true;
+        }
+        if (!$request->has('_t')) {
+            return false;
+        }
+        try {
+            $loadedAt = (int) decrypt($request->input('_t'));
+        } catch (\Throwable $e) {
+            return true;
+        }
+        return time() - $loadedAt < 3;
     }
 
     private function thanks(Request $request, string $form)

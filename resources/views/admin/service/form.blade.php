@@ -46,8 +46,14 @@
             </div>
             <div class="card-custom-p mb-4">
                 <h2 class="section-title">SEO</h2>
-                @include('admin.content.partials.field', ['name' => 'meta_title', 'id' => 'meta_title', 'def' => ['SEO title', 'text', 'Leave empty to use "Title | Company".'], 'value' => old('meta_title', $service->meta_title)])
-                @include('admin.content.partials.field', ['name' => 'meta_description', 'id' => 'meta_description', 'def' => ['SEO description', 'textarea'], 'value' => old('meta_description', $service->meta_description)])
+                @include('admin.partials.seo-fields', [
+                    'title' => old('meta_title', $service->meta_title),
+                    'description' => old('meta_description', $service->meta_description),
+                    'fallbackTitle' => ($service->title ?: 'Service') . ' | ' . $global_setting->company_name,
+                    'fallbackDescription' => (string) $service->short,
+                    'url' => $service->exists ? $service->url() : url('/services/new-service'),
+                    'noindex' => (bool) old('noindex', $service->noindex),
+                ])
             </div>
             <div class="card-custom-p">
                 <label class="d-flex align-items-center gap-2 mb-3">

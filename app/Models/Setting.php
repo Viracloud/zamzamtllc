@@ -40,7 +40,33 @@ class Setting extends Model
             'owner_operator_percentage' => 'Owner-operator % of line haul',
             'min_experience'            => 'Minimum experience (years)',
         ],
+        'Social Media' => [
+            'social_facebook'  => 'Facebook page URL',
+            'social_instagram' => 'Instagram profile URL',
+            'social_tiktok'    => 'TikTok profile URL',
+            'social_whatsapp'  => 'WhatsApp number (with country code, e.g. +1 214 555 0142)',
+            'social_x'         => 'X (Twitter) profile URL',
+            'social_truth'     => 'Truth Social profile URL',
+        ],
     ];
+
+    /** Fields that hold a full link (validated as URLs in the admin form). */
+    public const URL_FIELDS = ['fmcsa_url', 'social_facebook', 'social_instagram', 'social_tiktok', 'social_x', 'social_truth'];
+
+    /** Footer social icons that have a link set: [label, icon name in front.partials.social-icon, url]. */
+    public function socialLinks(): array
+    {
+        $whatsapp = preg_replace('/\D/', '', (string) $this->social_whatsapp);
+        $links = [
+            ['Facebook', 'facebook', $this->social_facebook],
+            ['Instagram', 'instagram', $this->social_instagram],
+            ['TikTok', 'tiktok', $this->social_tiktok],
+            ['WhatsApp', 'whatsapp', $whatsapp !== '' ? 'https://wa.me/' . $whatsapp : null],
+            ['X (Twitter)', 'x', $this->social_x],
+            ['Truth Social', 'truth', $this->social_truth],
+        ];
+        return array_values(array_filter($links, fn ($l) => filled($l[2])));
+    }
 
     public static function current(): self
     {
@@ -91,6 +117,11 @@ class Setting extends Model
 
     public function imageUrl(string $field, string $fallback): string
     {
-        return $this->{$field} ? asset('uploads/' . $this->{$field}) : asset($fallback);
+        $path = $this->{$field} ? 'uploads/' . $this->{$field} : $fallback;
+        // Favicons stay PNG; other images use the lighter WebP copy when there is one.
+        if ($field !== 'favicon' && ($light = \App\Support\ImageOptimizer::webpFor($path))) {
+            $path = $light;
+        }
+        return asset($path);
     }
 }

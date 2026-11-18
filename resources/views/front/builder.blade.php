@@ -2,6 +2,7 @@
 
 @section('title', $page->meta_title ? cms_text($page->meta_title) : ($page->key === 'home' ? $global_setting->company_name : $page->name . ' | ' . $global_setting->company_name))
 @section('description', cms_text($page->meta_description))
+@section('noindex', $page->noindex ? '1' : '0')
 
 @section('content')
     @foreach($sections as $section)

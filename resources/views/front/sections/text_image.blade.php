@@ -16,12 +16,12 @@
             @if($s->group('checklist')->isNotEmpty())
             <ul class="check-list">
                 @foreach($s->group('checklist') as $item)
-                <li><i class="fa-solid fa-circle-check"></i> {{ cms_text($item->title) }}</li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ cms_text($item->title) }}</li>
                 @endforeach
             </ul>
             @endif
             @if($s->button_text)
-            <a href="{{ cms_url($s->button_link) }}" class="btn {{ $bg === 'section-dark' ? 'btn-primary' : 'btn-dark' }}" style="margin-top: 28px">{{ cms_text($s->button_text) }} <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="{{ cms_url($s->button_link) }}" class="btn {{ $bg === 'section-dark' ? 'btn-primary' : 'btn-dark' }}" style="margin-top: 28px">{{ cms_text($s->button_text) }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
             @endif
         </div>
     </div>

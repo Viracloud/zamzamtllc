@@ -26,6 +26,36 @@
 .status-booked, .status-hired { background: #dcfce7; color: #15803d; }
 .status-closed { background: #f3f4f6; color: #4b5563; }
 .status-rejected { background: #fee2e2; color: #b91c1c; }
+.status-spam { background: #fef3c7; color: #92400e; }
+
+/* Sidebar groups */
+.sidebar-divider { height: 1px; background: rgba(255, 255, 255, .12); margin: 12px 8px; }
+.nav-dropdown-toggle { cursor: pointer; text-align: left; }
+.nav-dropdown-toggle.active { background: transparent; }
+.nav-group-link { padding-left: 1.6rem; font-size: .84rem; color: rgba(255, 255, 255, .85); }
+.nav-group-link i { font-size: .85rem; opacity: .8; }
+.nav-group-link.active { color: #fff; }
+.nav-group-link.active i { opacity: 1; }
+/* Collapsed sidebar shows only icons: keep every link reachable */
+@media (min-width: 1024px) {
+  .sidebar.collapsed .nav-dropdown-toggle { display: none; }
+  .sidebar.collapsed .nav-dropdown-menu { display: block; }
+  .sidebar.collapsed .nav-group-link { padding-left: .75rem; }
+}
+
+/* SEO: counters, pills and Google preview */
+.seo-count, .seo-pill { font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.seo-pill { display: inline-block; min-width: 30px; text-align: center; }
+.seo-good { background: #dcfce7; color: #15803d; }
+.seo-warn { background: #fef3c7; color: #92400e; }
+.seo-bad { background: #fee2e2; color: #b91c1c; }
+.seo-preview { border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; background: #fff; font-family: Arial, sans-serif; }
+.seo-preview-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #9ca3af; margin-bottom: 8px; font-family: inherit; }
+.seo-preview-url { font-size: 12.5px; color: #202124; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seo-preview-title { font-size: 18px; line-height: 1.3; color: #1a0dab; margin: 2px 0 3px; overflow-wrap: anywhere; }
+.seo-preview-desc { font-size: 13.5px; line-height: 1.5; color: #4d5156; overflow-wrap: anywhere; }
+.seo-table td { vertical-align: middle; }
+.seo-table td .text-sm { line-height: 1.4; }
 
 .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
 .filter-pills a {

@@ -5,7 +5,7 @@
             @if($s->subtitle)<p>{{ cms_text($s->subtitle) }}</p>@endif
         </div>
         @if($s->button_text)
-        <a href="{{ cms_url($s->button_link) }}" class="btn btn-dark">{{ cms_text($s->button_text) }} <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="{{ cms_url($s->button_link) }}" class="btn btn-dark">{{ cms_text($s->button_text) }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         @endif
     </div>
 </section>

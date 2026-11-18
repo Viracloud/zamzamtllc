@@ -11,6 +11,7 @@ class SitePage extends Model
     protected $casts = [
         'is_system' => 'boolean',
         'is_active' => 'boolean',
+        'noindex' => 'boolean',
     ];
 
     public function sections()

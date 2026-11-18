@@ -69,6 +69,7 @@ class AdminContentController extends Controller
         }
         $data = $request->validate($rules);
         $data['is_active'] = $page->key === 'home' ? true : $request->boolean('is_active');
+        $data['noindex'] = $page->key === 'home' ? false : $request->boolean('noindex');
 
         $page->update($data);
         return redirect()->back()->with('success', 'Page settings saved.');
@@ -333,6 +334,7 @@ class AdminContentController extends Controller
     {
         $name = $prefix . '_' . time() . '_' . Str::lower(Str::random(6)) . '.' . $file->extension();
         $file->move(public_path('uploads'), $name);
+        \App\Support\ImageOptimizer::makeWebp(public_path('uploads/' . $name));
         return $name;
     }
 
@@ -341,6 +343,9 @@ class AdminContentController extends Controller
     {
         if ($file && !str_starts_with($file, 'assets/') && file_exists(public_path('uploads/' . $file))) {
             unlink(public_path('uploads/' . $file));
+        }
+        if ($file && ($webp = \App\Support\ImageOptimizer::webpFor('uploads/' . $file))) {
+            unlink(public_path($webp));
         }
     }
 }

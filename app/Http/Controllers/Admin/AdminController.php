@@ -12,6 +12,7 @@ use App\Models\DriverApplication;
 use App\Models\QuoteRequest;
 use App\Models\Setting;
 use App\Mail\Websitemail;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -19,10 +20,10 @@ class AdminController extends Controller
     {
         return view('admin.dashboard', [
             'new_quotes' => QuoteRequest::where('status', 'New')->count(),
-            'total_quotes' => QuoteRequest::count(),
+            'total_quotes' => QuoteRequest::notSpam()->count(),
             'new_applications' => DriverApplication::where('status', 'New')->count(),
             'total_applications' => DriverApplication::count(),
-            'recent_quotes' => QuoteRequest::latest()->take(5)->get(),
+            'recent_quotes' => QuoteRequest::notSpam()->latest()->take(5)->get(),
             'recent_applications' => DriverApplication::latest()->take(5)->get(),
             'missing_fields' => Setting::current()->missingFields(),
         ]);
@@ -43,21 +44,24 @@ class AdminController extends Controller
             'password' => 'required',
         ]);
 
-        $check = $request->all();
         $data = [
-            'email' => $check['email'],
-            'password' => $check['password']
+            'email' => (string) $request->input('email'),
+            'password' => (string) $request->input('password'),
         ];
 
         if(Auth::guard('admin')->attempt($data)) {
-            return redirect()->route('admin_dashboard')->with('success','Login is successful!');
+            // New session id after login (prevents session fixation).
+            $request->session()->regenerate();
+            return redirect()->intended(route('admin_dashboard'))->with('success','Login is successful!');
         } else {
-            return redirect()->route('admin_login')->with('error','The information you entered is incorrect! Please try again!');
+            return redirect()->route('admin_login')->withInput($request->only('email'))->with('error','The information you entered is incorrect! Please try again!');
         }
     }
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect()->route('admin_login')->with('success','Logout is successful!');
     }
 
@@ -72,45 +76,69 @@ class AdminController extends Controller
             'email' => 'required|email',
         ]);
 
-        $admin = Admin::where('email',$request->email)->first();
-        if(!$admin) {
-            return redirect()->back()->with('error','Email is not found');
+        $admin = Admin::where('email', $request->email)->first();
+        if ($admin) {
+            // Random, single-use, expiring token; only its hash is stored.
+            $token = Str::random(64);
+            $admin->token = hash('sha256', $token);
+            $admin->token_expires_at = now()->addMinutes(self::RESET_MINUTES);
+            $admin->save();
+
+            $reset_link = route('admin_reset_password', [$token, $admin->email]);
+            $subject = "Password Reset";
+            $message = "To reset your password, click the link below. It works once and expires in " . self::RESET_MINUTES . " minutes.<br>";
+            $message .= '<a href="' . e($reset_link) . '">' . e($reset_link) . '</a>';
+            $message .= "<br><br>If you did not ask for this, ignore this email; your password stays the same.";
+
+            try {
+                \Mail::to($admin->email)->send(new Websitemail($subject, $message));
+            } catch (\Throwable $e) {
+                \Log::warning('Password reset email failed: ' . $e->getMessage());
+            }
         }
 
-        $token = hash('sha256',time());
-        $admin->token = $token;
-        $admin->update();
+        // Same answer whether or not the email exists, so it cannot be used to discover admin emails.
+        return redirect()->back()->with('success','If that email belongs to an admin account, a password reset link has been sent. Please also check your spam folder.');
+    }
 
-        $reset_link = url('admin/reset-password/'.$token.'/'.$request->email);
-        $subject = "Password Reset";
-        $message = "To reset password, please click on the link below:<br>";
-        $message .= "<a href='".$reset_link."'>".$reset_link."</a>";
+    private const RESET_MINUTES = 60;
 
-        \Mail::to($request->email)->send(new Websitemail($subject,$message));
-
-        return redirect()->back()->with('success','We have sent a password reset link to your email. Please check your email. If you do not find the email in your inbox, please check your spam folder.');
+    /** The admin whose valid, unexpired reset token matches; null otherwise. */
+    private function adminForToken(string $token, string $email): ?Admin
+    {
+        $admin = Admin::where('email', $email)->first();
+        if (!$admin || !$admin->token || !$admin->token_expires_at
+            || now()->greaterThan($admin->token_expires_at)
+            || !hash_equals($admin->token, hash('sha256', $token))) {
+            return null;
+        }
+        return $admin;
     }
 
     public function reset_password($token,$email)
     {
-        $admin = Admin::where('email',$email)->where('token',$token)->first();
-        if(!$admin) {
-            return redirect()->route('admin_login')->with('error','Token or email is not correct');
+        if (!$this->adminForToken((string) $token, (string) $email)) {
+            return redirect()->route('admin_login')->with('error','This reset link is invalid or has expired. Please request a new one.');
         }
         return view('admin.reset-password', compact('token','email'));
     }
 
     public function reset_password_submit(Request $request, $token, $email)
     {
+        $admin = $this->adminForToken((string) $token, (string) $email);
+        if (!$admin) {
+            return redirect()->route('admin_login')->with('error','This reset link is invalid or has expired. Please request a new one.');
+        }
+
         $request->validate([
-            'password' => ['required'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
             'confirm_password' => ['required','same:password'],
         ]);
 
-        $admin = Admin::where('email',$request->email)->where('token',$request->token)->first();
         $admin->password = Hash::make($request->password);
-        $admin->token = "";
-        $admin->update();
+        $admin->token = null;
+        $admin->token_expires_at = null;
+        $admin->save();
 
         return redirect()->route('admin_login')->with('success','Password reset is successful. You can login now.');
     }
@@ -122,19 +150,20 @@ class AdminController extends Controller
 
     public function profile_update(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email',
-        ]);
-
         $admin = Admin::where('id', Auth::guard('admin')->user()->id)->first();
+
+        $request->validate([
+            'name' => 'required|string|max:120',
+            'email' => ['required', 'email', 'max:160', \Illuminate\Validation\Rule::unique('admins', 'email')->ignore($admin->id)],
+        ]);
 
         if($request->hasFile('photo')) {
             $request->validate([
                 'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
-            $final_name = 'admin_'.time().'.'.$request->photo->getClientOriginalExtension();
+            // Extension from the file's real content, never from the name the browser sent.
+            $final_name = 'admin_'.time().'_'.Str::lower(Str::random(6)).'.'.$request->photo->extension();
 
             if($admin->photo != null && file_exists(public_path('uploads/'.$admin->photo))) {
                 unlink(public_path('uploads/'.$admin->photo));
@@ -146,11 +175,10 @@ class AdminController extends Controller
 
         if($request->password != null) {
             $request->validate([
-                'password' => ['required'],
+                'password' => ['required', 'string', 'min:8', 'max:255'],
                 'confirm_password' => ['required','same:password'],
             ]);
-            $admin->password = Hash::make($request->password);
-        }
+            $admin->password = Hash::make($request->password);        }
 
         $admin->name = $request->name;
         $admin->email = $request->email;

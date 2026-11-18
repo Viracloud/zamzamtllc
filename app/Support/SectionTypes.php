@@ -19,8 +19,46 @@ class SectionTypes
 {
     public const TOKEN_HELP = 'You can use placeholders such as {company_name}, {phone}, {usdot_number}.';
 
+    /** Small form & contact-box labels editable under Forms & Labels: key => [admin label, default text]. */
+    public const LABELS = [
+        'lbl_error'          => ['Both forms: error message', 'Please check the highlighted fields and try again.'],
+        'lbl_q_pickup'       => ['Quote form: pickup label', 'Pickup city & state'],
+        'lbl_q_pickup_ph'    => ['Quote form: pickup example', 'Chicago, IL'],
+        'lbl_q_delivery'     => ['Quote form: delivery label', 'Delivery city & state'],
+        'lbl_q_delivery_ph'  => ['Quote form: delivery example', 'Dallas, TX'],
+        'lbl_q_date'         => ['Quote form: pickup date label', 'Pickup date'],
+        'lbl_q_weight'       => ['Quote form: weight label', 'Weight (lbs)'],
+        'lbl_q_equipment'    => ['Quote form: equipment label', 'Equipment'],
+        'lbl_q_details'      => ['Quote form: "your details" heading', 'Your details'],
+        'lbl_q_name'         => ['Quote form: name label', 'Full name'],
+        'lbl_q_company'      => ['Quote form: company label', 'Company'],
+        'lbl_q_email'        => ['Quote form: email label', 'Email'],
+        'lbl_q_phone'        => ['Quote form: phone label', 'Phone'],
+        'lbl_q_notes'        => ['Quote form: notes label', 'Commodity & notes'],
+        'lbl_q_notes_ph'     => ['Quote form: notes example', 'Commodity, pallet count, appointment times, special requirements'],
+        'lbl_q_notice'       => ['Quote form: note above the button', "This form is for shippers and brokers requesting freight rates only. Sales, marketing and service offers are filtered out and won't receive a reply."],
+        'lbl_a_first'        => ['Application: first name label', 'First name'],
+        'lbl_a_last'         => ['Application: last name label', 'Last name'],
+        'lbl_a_phone'        => ['Application: mobile label', 'Mobile phone'],
+        'lbl_a_email'        => ['Application: email label', 'Email'],
+        'lbl_a_state'        => ['Application: state label', 'State'],
+        'lbl_a_state_ph'     => ['Application: "choose a state"', 'Choose a state'],
+        'lbl_a_exp'          => ['Application: experience label', 'CDL-A experience'],
+        'lbl_a_exp_ph'       => ['Application: "choose one"', 'Choose one'],
+        'lbl_a_position'     => ['Application: position label', 'Position'],
+        'lbl_c_phone'        => ['Contact box: phone label', 'Dispatch 24/7'],
+        'lbl_c_email'        => ['Contact box: email label', 'Email'],
+        'lbl_c_office'       => ['Contact box: office label', 'Office'],
+        'lbl_home'           => ['Breadcrumb: first link', 'Home'],
+    ];
+
     public static function all(): array
     {
+        $labelFields = [];
+        foreach (self::LABELS as $key => [$label, $default]) {
+            $labelFields[$key] = [$label, str_ends_with($key, '_notice') ? 'textarea' : 'text', 'Leave empty to use: ' . $default];
+        }
+
         $background = ['Background', 'select', null, ['white' => 'White', 'gray' => 'Light gray', 'dark' => 'Dark']];
 
         return [
@@ -177,18 +215,19 @@ class SectionTypes
 
             'safety' => [
                 'label' => 'Safety & authority',
-                'description' => 'Dark section with authority numbers and safety cards.',
+                'description' => 'Authority numbers and safety cards.',
                 'fields' => [
                     'kicker' => ['Kicker', 'text'],
                     'title' => ['Title', 'text'],
                     'body' => ['Text', 'textarea'],
                     'button_text' => ['FMCSA link text', 'text', 'Shown only when a USDOT number or FMCSA URL is set in Company Settings.'],
+                    'background' => $background,
                 ],
                 'groups' => [
                     'authority' => ['Authority boxes', 'box', ['title' => ['Label', 'text'], 'value' => ['Value', 'text', 'e.g. {usdot_number}']]],
                     'cards' => ['Safety cards', 'card', ['icon' => ['Icon', 'icon'], 'title' => ['Title', 'text'], 'body' => ['Text', 'textarea']]],
                 ],
-                'defaults' => ['kicker' => 'Safety & Compliance', 'title' => 'Licensed, Insured and Easy to Verify', 'button_text' => 'View our FMCSA SAFER profile'],
+                'defaults' => ['kicker' => 'Safety & Compliance', 'title' => 'Licensed, Insured and Easy to Verify', 'button_text' => 'View our FMCSA SAFER profile', 'background' => 'white'],
             ],
 
             'quote' => [
@@ -332,7 +371,7 @@ class SectionTypes
                     'service_cta_title' => ['Service pages: side box title', 'text'],
                     'service_cta_text' => ['Service pages: side box text', 'textarea'],
                     'service_others' => ['Service pages: "other services" heading', 'text'],
-                ],
+                ] + $labelFields,
                 'groups' => [
                     'equipment' => ['Quote form: equipment options', 'option', ['title' => ['Option', 'text']]],
                     'experience' => ['Application: experience options', 'option', ['title' => ['Option', 'text']]],

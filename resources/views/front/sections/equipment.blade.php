@@ -12,7 +12,7 @@
         <div class="equipment-grid">
             @foreach($s->group('cards') as $item)
             <article class="card equip-card reveal">
-                @if($item->icon)<div class="equip-icon"><i class="fa-solid {{ $item->icon }}"></i></div>@endif
+                @if($item->icon)<div class="equip-icon"><i class="fa-solid {{ $item->icon }}" aria-hidden="true"></i></div>@endif
                 <h3>{{ cms_text($item->title) }}</h3>
                 <ul class="spec-list">
                     @foreach(cms_lines($item->body) as $line)

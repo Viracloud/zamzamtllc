@@ -79,15 +79,14 @@
             </div>
             @endif
             @if($page->key !== 'service')
-            <div class="mb-3">
-                <label class="label-custom" for="p-mt">SEO title</label>
-                <input type="text" id="p-mt" name="meta_title" value="{{ old('meta_title', $page->meta_title) }}" class="form-control-custom">
-            </div>
-            <div class="mb-3">
-                <label class="label-custom" for="p-md">SEO description</label>
-                <textarea id="p-md" name="meta_description" rows="3" class="form-control-custom">{{ old('meta_description', $page->meta_description) }}</textarea>
-                <div class="field-hint">{{ \App\Support\SectionTypes::TOKEN_HELP }}</div>
-            </div>
+            @include('admin.partials.seo-fields', [
+                'title' => old('meta_title', $page->meta_title),
+                'description' => old('meta_description', $page->meta_description),
+                'fallbackTitle' => $page->key === 'home' ? $global_setting->company_name : $page->name . ' | ' . $global_setting->company_name,
+                'fallbackDescription' => '',
+                'url' => $page->url(),
+                'noindex' => $page->key === 'home' ? null : (bool) old('noindex', $page->noindex),
+            ])
             @endif
             @if($page->key !== 'home')
             <label class="d-flex align-items-center gap-2 mb-3">

@@ -24,7 +24,7 @@
                 @if($s->field('requirements_title'))<h3>{{ cms_text($s->field('requirements_title')) }}</h3>@endif
                 <ul class="check-list">
                     @foreach($s->group('requirements') as $item)
-                    <li><i class="fa-solid fa-circle-check"></i> {{ cms_text($item->title) }}</li>
+                    <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ cms_text($item->title) }}</li>
                     @endforeach
                 </ul>
             </div>

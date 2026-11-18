@@ -1,9 +1,30 @@
 @extends('front.layouts.master')
 
-@php($servicesPage = \App\Models\SitePage::where('key', 'services')->first())
-
 @section('title', $service->meta_title ? cms_text($service->meta_title) : $service->title . ' | ' . $global_setting->company_name)
 @section('description', cms_text($service->meta_description ?: $service->short))
+
+@section('noindex', $service->noindex ? '1' : '0')
+@if($service->image)
+@section('og_image', cms_image($service->image, null, false))
+@endif
+
+@php
+    $servicesPage = \App\Models\SitePage::where('key', 'services')->first();
+    $serviceSchema = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'Service',
+        'name' => $service->title,
+        'serviceType' => 'Freight transportation',
+        'description' => cms_text($service->meta_description ?: $service->short),
+        'url' => $service->url(),
+        'image' => $service->image ? cms_image($service->image) : null,
+        'provider' => ['@id' => url('/') . '#business'],
+        'areaServed' => ['@type' => 'Country', 'name' => 'United States'],
+    ]);
+@endphp
+@push('schema')
+<script type="application/ld+json">{!! json_encode($serviceSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+@endpush
 
 @section('content')
     @include('front.sections.page_banner', [
@@ -26,7 +47,7 @@
                 <h2 class="detail-heading">{{ cms_text(cms_global('forms')->field('service_included', "What's Included")) }}</h2>
                 <ul class="check-list">
                     @foreach($service->featureList() as $feature)
-                    <li><i class="fa-solid fa-circle-check"></i> {{ cms_text($feature) }}</li>
+                    <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ cms_text($feature) }}</li>
                     @endforeach
                 </ul>
                 @endif
@@ -47,14 +68,14 @@
                     <h3>{{ cms_text(cms_global('forms')->field('service_cta_title', 'Get a rate for your lane')) }}</h3>
                     <p>{{ cms_text(cms_global('forms')->field('service_cta_text')) }}</p>
                     <a href="{{ cms_url($header->button_link ?: '/request-a-quote') }}" class="btn btn-primary btn-block">{{ cms_text($header->button_text ?: 'Request a Quote') }}</a>
-                    <a href="{{ $global_setting->phoneHref() }}" class="aside-phone"><i class="fa-solid fa-phone"></i> {{ $global_setting->phone }}</a>
+                    <a href="{{ $global_setting->phoneHref() }}" class="aside-phone"><i class="fa-solid fa-phone" aria-hidden="true"></i> {{ $global_setting->phone }}</a>
                 </div>
                 @if($others->isNotEmpty())
                 <div class="card aside-card">
                     <h3>{{ cms_text(cms_global('forms')->field('service_others', 'Other Services')) }}</h3>
                     <ul class="aside-links">
                         @foreach($others as $other)
-                        <li><a href="{{ $other->url() }}">@if($other->icon)<i class="fa-solid {{ $other->icon }}"></i>@endif {{ $other->title }} <i class="fa-solid fa-arrow-right"></i></a></li>
+                        <li><a href="{{ $other->url() }}">@if($other->icon)<i class="fa-solid {{ $other->icon }}" aria-hidden="true"></i>@endif {{ $other->title }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></li>
                         @endforeach
                     </ul>
                 </div>

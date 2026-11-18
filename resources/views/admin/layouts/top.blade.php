@@ -21,9 +21,11 @@
                 <a href="{{ route('admin_profile') }}" class="text-dark-custom">
                     <i class="fa-regular fa-user"></i>Profile
                 </a>
-                <a href="{{ route('admin_logout') }}" class="text-danger-custom">
+                {{-- Logout is a POST with a CSRF token, so another site cannot log the admin out --}}
+                <a href="{{ route('admin_login') }}" class="text-danger-custom" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                     <i class="fa-solid fa-right-from-bracket"></i>Logout
                 </a>
+                <form id="logout-form" action="{{ route('admin_logout') }}" method="post" class="d-none">@csrf</form>
             </div>
         </div>
     </div>

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\AdminServiceController;
 Route::get('/', [FrontController::class, 'home'])->name('home');
 Route::get('/services/{slug}', [FrontController::class, 'service'])->name('service');
 Route::get('/sitemap.xml', [FrontController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [FrontController::class, 'robots'])->name('robots');
 
 Route::post('/quote', [FrontController::class, 'quote_submit'])->middleware('throttle:quote')->name('quote_submit');
 Route::post('/apply', [FrontController::class, 'application_submit'])->middleware('throttle:application')->name('application_submit');
@@ -31,15 +32,17 @@ Route::prefix('admin')->group(function () {
     Route::get('/', function () {return redirect('/admin/login');});
     Route::get('/login',[AdminController::class,'login'])->name('admin_login');
     Route::post('/login',[AdminController::class,'login_submit'])->middleware('throttle:admin-login')->name('admin_login_submit');
-    Route::get('/logout',[AdminController::class,'logout'])->name('admin_logout');
+    Route::post('/logout',[AdminController::class,'logout'])->name('admin_logout');
+    Route::get('/logout', fn () => redirect()->route('admin_dashboard'));
     Route::get('/forget-password',[AdminController::class,'forget_password'])->name('admin_forget_password');
     Route::post('/forget_password_submit',[AdminController::class,'forget_password_submit'])->middleware('throttle:3,1')->name('admin_forget_password_submit');
     Route::get('/reset-password/{token}/{email}',[AdminController::class,'reset_password'])->name('admin_reset_password');
-    Route::post('/reset-password/{token}/{email}',[AdminController::class,'reset_password_submit'])->name('admin_reset_password_submit');
+    Route::post('/reset-password/{token}/{email}',[AdminController::class,'reset_password_submit'])->middleware('throttle:5,1')->name('admin_reset_password_submit');
 });
 
 Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/dashboard',[AdminController::class,'dashboard'])->name('admin_dashboard');
+    Route::get('/support',[\App\Http\Controllers\Admin\AdminSupportController::class,'index'])->name('admin_support');
     Route::get('/profile',[AdminController::class,'profile'])->name('admin_profile');
     Route::post('/profile',[AdminController::class,'profile_update'])->name('admin_profile_update');
 
@@ -62,6 +65,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::post('/setting/company',[AdminSettingController::class,'company_update'])->name('admin_setting_company_update');
     Route::get('/setting/theme',[AdminSettingController::class,'theme'])->name('admin_setting_theme');
     Route::post('/setting/theme',[AdminSettingController::class,'theme_update'])->name('admin_setting_theme_update');
+    Route::get('/setting/seo',[AdminSettingController::class,'seo'])->name('admin_setting_seo');
+    Route::post('/setting/seo',[AdminSettingController::class,'seo_update'])->name('admin_setting_seo_update');
     Route::get('/setting/images',[AdminSettingController::class,'images'])->name('admin_setting_images');
     Route::post('/setting/images',[AdminSettingController::class,'images_update'])->name('admin_setting_images_update');
     Route::post('/setting/images/{field}/reset',[AdminSettingController::class,'image_reset'])->name('admin_setting_image_reset');
@@ -102,4 +107,7 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 | Builder pages — keep last so they never shadow the routes above
 |--------------------------------------------------------------------------
 */
+// The site has no language prefix: send old/typed /en/... links to the real page.
+Route::get('/en/{path?}', fn (?string $path = null) => redirect('/' . $path, 301))->where('path', '.*');
+
 Route::get('/{slug}', [FrontController::class, 'page'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('page');

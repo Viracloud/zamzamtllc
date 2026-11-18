@@ -10,6 +10,7 @@ class Service extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'noindex' => 'boolean',
     ];
 
     public function scopeActive($query)

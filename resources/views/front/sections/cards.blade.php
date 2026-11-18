@@ -12,11 +12,11 @@
             @foreach($s->group('cards') as $item)
                 @php($tag = $item->link ? 'a' : 'div')
                 <{{ $tag }} @if($item->link) href="{{ cms_url($item->link) }}" @endif class="card explore-card reveal">
-                    @if($item->icon)<div class="equip-icon"><i class="fa-solid {{ $item->icon }}"></i></div>@endif
+                    @if($item->icon)<div class="equip-icon"><i class="fa-solid {{ $item->icon }}" aria-hidden="true"></i></div>@endif
                     @if($item->subtitle)<span class="explore-kicker">{{ cms_text($item->subtitle) }}</span>@endif
-                    <h3>{{ cms_text($item->title) }}</h3>
+                    <{{ $s->title ? 'h3' : 'h2' }} class="card-heading">{{ cms_text($item->title) }}</{{ $s->title ? 'h3' : 'h2' }}>
                     @if($item->body)<p>{{ cms_text($item->body) }}</p>@endif
-                    @if($item->link && $item->value)<span class="link-arrow">{{ cms_text($item->value) }} <i class="fa-solid fa-arrow-right"></i></span>@endif
+                    @if($item->link && $item->value)<span class="link-arrow">{{ cms_text($item->value) }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>@endif
                 </{{ $tag }}>
             @endforeach
         </div>

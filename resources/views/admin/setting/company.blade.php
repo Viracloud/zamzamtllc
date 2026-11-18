@@ -15,14 +15,18 @@
                 @foreach($fields as $field => $label)
                 <div class="mb-3">
                     <label class="label-custom" for="f-{{ $field }}">{{ $label }}</label>
-                    <input type="{{ $field === 'fmcsa_url' ? 'url' : ($field === 'email' ? 'email' : 'text') }}"
+                    @php($optional = in_array($field, \App\Models\Setting::URL_FIELDS) || $field === 'social_whatsapp')
+                    <input type="{{ in_array($field, \App\Models\Setting::URL_FIELDS) ? 'url' : ($field === 'email' ? 'email' : 'text') }}"
                            id="f-{{ $field }}" name="{{ $field }}"
                            value="{{ old($field, $setting->{$field}) }}"
-                           class="form-control-custom {{ $field !== 'fmcsa_url' && $setting->isPlaceholder($field) ? 'placeholder-input' : '' }}">
+                           class="form-control-custom {{ !$optional && $setting->isPlaceholder($field) ? 'placeholder-input' : '' }} {{ $errors->has($field) ? 'is-invalid' : '' }}">
+                    @error($field)<div class="field-hint text-danger">{{ $message }}</div>@enderror
                     @if($field === 'fmcsa_url' && $setting->fmcsaLink())
                         <div class="field-hint">Current link: <a href="{{ $setting->fmcsaLink() }}" target="_blank" rel="noopener">{{ \Illuminate\Support\Str::limit($setting->fmcsaLink(), 70) }}</a></div>
                     @elseif($field === 'mc_number')
                         <div class="field-hint">Shown as "MC-{{ $setting->mc_number }}".</div>
+                    @elseif(str_starts_with($field, 'social_'))
+                        <div class="field-hint">Leave empty to hide this icon in the footer.</div>
                     @elseif($field === 'driver_pay')
                         <div class="field-hint">Shown as "{{ $setting->driver_pay }} / mile", e.g. $0.65.</div>
                     @endif

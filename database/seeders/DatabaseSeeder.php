@@ -36,10 +36,10 @@ class DatabaseSeeder extends Seeder
             'tagline' => 'Your Trusted Transportation Partner Across the United States',
             'base_location' => '[City, State]',
             'phone' => '[(000) 000-0000]',
-            'email' => '[dispatch@zamzamtrucking.com]',
+            'email' => 'info@zamzamtllc.com',
             'address_street' => '[Street address]',
             'address_city' => '[City, State ZIP]',
-            'since_year' => '2020',
+            'since_year' => '2024',
 
             'usdot_number' => '[0000000]',
             'mc_number' => '[000000]',

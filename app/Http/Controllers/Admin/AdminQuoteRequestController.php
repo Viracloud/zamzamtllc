@@ -12,7 +12,7 @@ class AdminQuoteRequestController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
-        $quotes = QuoteRequest::when(in_array($status, QuoteRequest::STATUSES), fn ($q) => $q->where('status', $status))
+        $quotes = QuoteRequest::when(in_array($status, QuoteRequest::STATUSES), fn ($q) => $q->where('status', $status), fn ($q) => $q->notSpam())
             ->orderBy('id', 'desc')
             ->get();
         return view('admin.quote_request.index', compact('quotes', 'status'));
